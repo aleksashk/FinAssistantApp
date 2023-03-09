@@ -1,5 +1,9 @@
 package com.aleksandrphilimonov.practice;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -11,6 +15,13 @@ import static org.apache.commons.codec.digest.DigestUtils.md5Hex;
 
 public class App {
     public static void main(String[] args) {
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl("jdbc:postgresql://localhost:5432/postgres1");
+        config.setUsername("postgres");
+        config.setPassword("password");
+
+        DataSource ds = new HikariDataSource(config);
+
         String email = "aleksandrphilimonov@gmail.com";
         String password = "password";
         String passwordHex = md5Hex(password);

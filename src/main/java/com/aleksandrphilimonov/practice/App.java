@@ -1,4 +1,4 @@
-package com.aleksandrphilimonov;
+package com.aleksandrphilimonov.practice;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

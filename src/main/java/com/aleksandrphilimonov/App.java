@@ -1,5 +1,7 @@
 package com.aleksandrphilimonov;
 
+import org.apache.commons.codec.digest.DigestUtils;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -7,10 +9,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import static org.apache.commons.codec.digest.DigestUtils.*;
+
 public class App {
     public static void main(String[] args) {
         String email = "aleksandrphilimonov@gmail.com";
         String password = "password";
+        String passwordHex = md5Hex(password);
+
         try (Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/postgres1", "postgres", "password")) {
 
             Statement statement = con.createStatement();
@@ -26,7 +32,7 @@ public class App {
             PreparedStatement preparedStatement = con.prepareStatement("select * from service_user where email = ? and password = ?");
 
             preparedStatement.setString(1, email);
-            preparedStatement.setString(2, password);
+            preparedStatement.setString(2, passwordHex);
 
             ResultSet rs = preparedStatement.executeQuery();
             if (rs.next()) {

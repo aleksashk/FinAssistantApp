@@ -1,7 +1,5 @@
 package com.aleksandrphilimonov;
 
-import org.apache.commons.codec.digest.DigestUtils;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -9,7 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import static org.apache.commons.codec.digest.DigestUtils.*;
+import static org.apache.commons.codec.digest.DigestUtils.md5Hex;
 
 public class App {
     public static void main(String[] args) {

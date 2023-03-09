@@ -1,56 +1,25 @@
 package com.aleksandrphilimonov.practice;
 
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
+import com.aleksandrphilimonov.practice.service.AuthService;
+import com.aleksandrphilimonov.practice.service.UserDTO;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-
-import static org.apache.commons.codec.digest.DigestUtils.md5Hex;
+import java.util.Scanner;
 
 public class App {
     public static void main(String[] args) {
-        HikariConfig config = new HikariConfig();
-        config.setJdbcUrl("jdbc:postgresql://localhost:5432/postgres1");
-        config.setUsername("postgres");
-        config.setPassword("password");
+        AuthService authService = new AuthService();
 
-        DataSource ds = new HikariDataSource(config);
+        String email = request("Введите email:");
+        String password = request("Введите password:");
 
-        String email = "aleksandrphilimonov@gmail.com";
-        String password = "password";
-        String passwordHex = md5Hex(password);
+        UserDTO userDTO = authService.auth(email, password);
 
-        try (Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/postgres1", "postgres", "password")) {
+        System.out.println(userDTO);
+    }
 
-            Statement statement = con.createStatement();
-            ResultSet resultSet = statement.executeQuery("select * from service_user");
-            while (resultSet.next()) {
-                System.out.println(resultSet.getLong("id") + ", " + resultSet.getString("email") + ", " + resultSet.getString("password"));
-            }
-
-            statement.close();
-
-            System.out.println();
-
-            PreparedStatement preparedStatement = con.prepareStatement("select * from service_user where email = ? and password = ?");
-
-            preparedStatement.setString(1, email);
-            preparedStatement.setString(2, passwordHex);
-
-            ResultSet rs = preparedStatement.executeQuery();
-            if (rs.next()) {
-                System.out.println("Hello " + rs.getString("email") + "!");
-            } else {
-                System.out.println("Access denied");
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+    static String request(String title) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println(title);
+        return scanner.next();
     }
 }

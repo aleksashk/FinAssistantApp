@@ -12,7 +12,8 @@ public class App {
         String email = request("Введите email:");
         String password = request("Введите password:");
 
-        UserDTO userDTO = authService.auth(email, password);
+//        UserDTO userDTO = authService.auth(email, password);
+        UserDTO userDTO = authService.registration(email, password);
 
         System.out.println(userDTO);
     }

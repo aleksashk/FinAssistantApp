@@ -1,249 +1,203 @@
 package com.aleksandrphilimonov.finAssistApp;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import com.aleksandrphilimonov.finAssistApp.service.AccountDTO;
+import com.aleksandrphilimonov.finAssistApp.service.AccountService;
+import com.aleksandrphilimonov.finAssistApp.service.AuthService;
+import com.aleksandrphilimonov.finAssistApp.service.CategoryDTO;
+import com.aleksandrphilimonov.finAssistApp.service.CategoryService;
+import com.aleksandrphilimonov.finAssistApp.service.UserDTO;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
 import java.util.Scanner;
 
 public class App {
-    public static String MESSAGE;
-    public static Connection CONNECTION;
-    public static final String URL = "jdbc:postgresql://localhost:5432/postgres";
-    public static final String LOGIN = "postgres";
-    public static final String PASSWORD = "password";
+
+    private static final AuthService authService = new AuthService();
 
     public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        MESSAGE = "Выберите действие: \n" +
-                "/t 1 - регистрация нового пользователя;" +
-                "/t 2 - авторизация пользователя;" +
-                "/t 3 - выход из программы;";
+        UserDTO userDTO;
 
-        System.out.println(MESSAGE);
+        String request = requestString("press 1 for authorization\npress 2 for registration");
 
-        String chose = scanner.nextLine();
-        try {
-            CONNECTION = DriverManager.getConnection(URL, LOGIN, PASSWORD);
-            while (true) {
-                switch (chose) {
-                    case "1":
-                        registration();
-                        break;
-                    case "2":
-                        authorisation();
-                        break;
-                    case "3":
-                        System.out.println("Вы вышли из системы.");
-                        return;
-                    default:
-                        System.out.println("Некорректный ввод. Попробуйте ещё раз");
-                }
-                MESSAGE = "Выберите действие:\n" +
-                        "\tНажмите 1 для регистрации нового пользователя;\n" +
-                        "\tНажмите 2 для авторизации пользователя;\n" +
-                        "\tНажмите 3 выхода из программы;";
-                System.out.println(MESSAGE);
-                chose = scanner.nextLine();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                CONNECTION.close();
-            } catch (SQLException ignore) {
-            }
-        }
-    }
-
-    private static void registration() {
-        String userData = getUser();
-        String email = userData.split(" ")[0];
-        String password = userData.split(" ")[1];
-
-        try {
-            PreparedStatement preparedStatementExist = CONNECTION.prepareStatement("select * from service_user where email = ?");
-            preparedStatementExist.setString(1, email);
-
-            PreparedStatement preparedStatementNotExist = CONNECTION.prepareStatement("insert into service_user (email, password) values (?, ?)");
-
-            ResultSet resultSet = preparedStatementExist.executeQuery();
-            if (resultSet.next()) {
-                MESSAGE = "Данный пользователь уже зарегистрирован.";
-            } else {
-                preparedStatementNotExist.setString(1, email);
-                preparedStatementNotExist.setString(2, password);
-                if (preparedStatementNotExist.executeUpdate() != 0) {
-                    MESSAGE = "Регистрация пользователя прошла успешно.";
+        switch (request) {
+            case "1":
+                String email = requestString("Input email: ");
+                String password = requestString("Input password: ");
+                userDTO = authService.auth(email, password);
+                if (userDTO == null) {
+                    message("Invalid data.");
                 } else {
-                    MESSAGE = "Регистрация не завершена, некорректные данные.";
+                    message("User " + userDTO + " authorized.");
+                    action(userDTO);
                 }
-            }
-            System.out.println(MESSAGE);
-        } catch (SQLException e) {
-            e.printStackTrace();
+                break;
+            case "2":
+                email = requestString("Input email: ");
+                password = requestString("Input password: ");
+                userDTO = authService.registration(email, password);
+                if (userDTO == null) {
+                    message("Invalid data.");
+                } else {
+                    message("User " + userDTO + " registered.");
+                    action(userDTO);
+                }
+                break;
+            default:
+                message("Invalid choose. EXIT");
+                break;
         }
+
     }
 
-    private static String getUser() {
-        StringBuilder userData = new StringBuilder();
+    private static String requestString(String s) {
         Scanner scanner = new Scanner(System.in);
-        MESSAGE = "Введите email пользователя: ";
-        System.out.println(MESSAGE);
-        userData.append(scanner.nextLine())
-                .append(" ");
-        MESSAGE = "Введите пароль (не менее 5 символов): ";
-        System.out.println(MESSAGE);
-        userData.append(scanner.nextLine());
+        System.out.println(s);
+        return scanner.next();
+    }
+
+    public static Integer requestInteger(String message) {
+        message(message);
+        Scanner scanner = new Scanner(System.in);
+        String sNumber = scanner.next();
+        Integer number = null;
 
         try {
-            userChecker(userData);
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
+            number = Integer.parseInt(sNumber);
+        } catch (IllegalArgumentException ignore) {
+            System.out.println("Invalid value: " + sNumber + ". Try again.");
+            requestInteger(message);
         }
-
-        return userData.toString();
+        return number;
     }
 
-    private static void userChecker(StringBuilder userData) throws IllegalArgumentException {
-        if (userData.toString().split(" ")[0].length() < 5 ||
-                userData.toString().split(" ")[1].length() < 5) {
-            throw new IllegalArgumentException("Некорректные данные нового пользователя!");
-        }
-    }
+    private static void action(UserDTO userDTO) {
+        AccountService accountService = new AccountService();
+        CategoryService categoryService = new CategoryService();
 
-    private static void authorisation() throws SQLException {
-
-        String userData = getUser();
-        String email = userData.split(" ")[0];
-        String password = userData.split(" ")[1];
-
-        PreparedStatement preparedStatement = CONNECTION.prepareStatement("select * from service_user where email = ? and password = ?");
-        preparedStatement.setString(1, email);
-        preparedStatement.setString(2, password);
-
-        ResultSet resultSet = preparedStatement.executeQuery();
-        if (resultSet.next()) {
-            MESSAGE = "Вы вошли в систему как пользователь с email: " + email;
-        } else {
-            MESSAGE = "Неверные данные";
-            return;
-        }
-        System.out.println(MESSAGE);
-
-        MESSAGE = "Выберите действие:\n" +
-                "\tНажмите 1 для просмотра списка счетов пользователя;\n" +
-                "\tНажмите 2 для создания нового счета;\n" +
-                "\tНажмите 3 для удаления счета;\n" +
-                "\tНажмите 0 для выхода из системы;";
-        System.out.println(MESSAGE);
-
-        Scanner scanner = new Scanner(System.in);
-        String chose = scanner.nextLine();
+        String choice = requestString("press 1 to display list of accounts\n" +
+                "press 2 to create an account\n" +
+                "press 3 to delete an account\n" +
+                "press 4 to create a category\n" +
+                "press 5 to change a category\n" +
+                "press 6 to delete a category");
         while (true) {
-            switch (chose) {
+            switch (choice) {
                 case "1":
-                    showAccounts(email);
+                    List<AccountDTO> accountDTOList = accountService.getAllByUserId(userDTO.getId());
+                    if (accountDTOList.isEmpty()) {
+                        message("User email: " + userDTO.getEmail() + " doesn't have any account.");
+                    } else {
+                        for (AccountDTO account : accountDTOList) {
+                            message(account.toString());
+                        }
+                    }
                     break;
                 case "2":
-                    createAccount(email);
+                    String account = requestString("Input name of account: ");
+                    Double balance = requestDouble("Input balance of account [X.XX]: ");
+
+                    AccountDTO accountDTO = accountService.addAccount(account, BigDecimal.valueOf(balance), userDTO.getId());
+                    if (accountDTO == null) {
+                        message("Account already exists.");
+                    } else {
+                        message("new account: \n" + accountDTO);
+                    }
                     break;
                 case "3":
-                    deleteAccount(email);
+                    accountDTOList = accountService.getAllByUserId(userDTO.getId());
+                    if (accountDTOList == null) {
+                        message("User email: " + userDTO.getEmail() + " doesn't have accounts.");
+                    } else {
+                        for (AccountDTO item : accountDTOList) {
+                            message(item.toString());
+                        }
+                        int id = requestInteger("Inpunt accountId for remove: ");
+                        accountDTO = accountDTOList.get(id - 1);
+                        accountService.deleteAccount(accountDTO.getId(), userDTO.getId());
+                        message("The account id = " + id +
+                                " number:" + accountDTO.getTitle() +
+                                " deleted.");
+                    }
                     break;
-                case "0":
-                    System.out.println("Вы вышли из системы.");
-                    return;
+                case "4":
+                    String category = requestString("Input a category name: ");
+                    CategoryDTO categoryDTO = categoryService.insert(category, userDTO.getId());
+                    if (categoryDTO == null) {
+                        message("Category: " + category + " already exists.");
+                    } else {
+                        message("Category: " + category + " added.");
+                    }
+                    break;
+                case "5":
+                    List<CategoryDTO> categoryDTOList = categoryService.getAllByUserId(userDTO.getId());
+                    if (categoryDTOList.isEmpty()) {
+                        message("Category list is empty.");
+                    } else {
+                        for (CategoryDTO item : categoryDTOList) {
+                            message(item.getId() + 1 +
+                                    " " + item.getName() +
+                                    " " + item.getUserId());
+                        }
+                        int id = requestInteger("Inpunt categoryId for rename: ");
+                        String newNameCategory = requestString("Input new name for the category: ");
+                        categoryDTO = categoryDTOList.get(id - 1);
+                        categoryDTO = categoryService.update(categoryDTO.getId(), newNameCategory, userDTO.getId());
+                        if (categoryDTO == null) {
+                            message("Category already exists.");
+                        } else {
+                            message(categoryDTO + "\n Category name changed.");
+                        }
+                    }
+                    break;
+                case "6":
+                    categoryDTOList = categoryService.getAllByUserId(userDTO.getId());
+                    if (categoryDTOList.isEmpty()) {
+                        message("Category list is empty.");
+                    } else {
+                        for (CategoryDTO item : categoryDTOList) {
+                            message(item.getId() + 1 +
+                                    " " + item.getName() +
+                                    " " + item.getUserId());
+                        }
+                        int id = requestInteger("Inpunt categoryId for remove: ");
+                        categoryDTO = categoryDTOList.get(id - 1);
+                        categoryService.delete(categoryDTO.getId(), userDTO.getId());
+                        message("Category " + categoryDTO.getName() + " deleted.");
+                    }
+                    break;
                 default:
-                    System.out.println("Некорректный ввод. Попробуйте ещё раз.");
+                    message("Invalid choose. EXIT");
+                    return;
             }
-            System.out.println(MESSAGE);
-            chose = scanner.nextLine();
+            choice = requestString("-----------------------------------------\n" +
+                    "press 1 to display list of accounts\n" +
+                    "press 2 to create an account\n" +
+                    "press 3 to delete an account\n" +
+                    "press 4 to create a category\n" +
+                    "press 5 to change a category\n" +
+                    "press 6 to delete a category");
         }
     }
 
-    private static void deleteAccount(String email) throws SQLException {
+    public static Double requestDouble(String message) {
+        message(message);
+
         Scanner scanner = new Scanner(System.in);
-        MESSAGE = "Введите номер удаляемого счета: ";
-        System.out.println(MESSAGE);
-        String account = scanner.next();
-        PreparedStatement preparedStatement = CONNECTION.prepareStatement("delete from account where user_id = (" +
-                "select su.id " +
-                "from service_user as su " +
-                "where su.email = ?)" +
-                " and title = ?");
-        preparedStatement.setString(1, email);
-        preparedStatement.setString(2, account);
+        String sNumber = scanner.next();
+        Double number = null;
 
-        if (preparedStatement.executeUpdate() != 0) {
-            MESSAGE = "Счёт №" + account + " успешно удалён.";
-        } else {
-            MESSAGE = "Счёт №" + account + " у пользователя с email " + email + " не найден.";
+        try {
+            number = Double.parseDouble(sNumber);
+        } catch (IllegalArgumentException ignore) {
+            System.out.println("Invalid value: " + sNumber + ". Try again.");
+            requestInteger(message);
         }
-        System.out.println(MESSAGE);
-        preparedStatement.close();
+        return number;
     }
 
-    private static void createAccount(String email) throws SQLException {
-        Scanner scanner = new Scanner(System.in);
-        MESSAGE = "Введите номер нового счета: ";
-        System.out.println(MESSAGE);
-        String account = scanner.next();
-        PreparedStatement preparedStatement = CONNECTION.prepareStatement(
-                "select a.title " +
-                        "from account as a " +
-                        "where a.title = ? and user_id = (" +
-                        "select su.id " +
-                        "from service_user as su " +
-                        "where su.email = ?)");
-        preparedStatement.setString(1, account);
-        preparedStatement.setString(2, email);
-
-        PreparedStatement preparedStatementNewAccount = CONNECTION.prepareStatement(
-                "insert into account values (?, 0.00, (select su.id from service_user as su where su.email = ?))"
-        );
-
-        ResultSet resultSet = preparedStatement.executeQuery();
-        if (resultSet.next()) {
-            MESSAGE = "Счет с номером: " + account +
-                    " у пользователя с email: " +
-                    email +
-                    " уже существует";
-        } else {
-            preparedStatementNewAccount.setString(1, account);
-            preparedStatementNewAccount.setString(2, email);
-
-            if (preparedStatementNewAccount.executeUpdate() != 0) {
-                MESSAGE = "Пользователю с email: " + email + " добавлен счет";
-            } else {
-                MESSAGE = "Ошибка регистрации нового счета для пользователя с email: " + email;
-            }
-            System.out.println(MESSAGE);
-            preparedStatement.close();
-            preparedStatementNewAccount.close();
-        }
-    }
-
-    private static void showAccounts(String email) throws SQLException {
-        PreparedStatement preparedStatement = CONNECTION.prepareStatement(
-                "select su.email, a.title\n" +
-                        "from service_user as su\n" +
-                        "join account a on su.id = a.user_id\n" +
-                        "where email = ?" +
-                        "order by email"
-        );
-        preparedStatement.setString(1, email);
-
-        ResultSet resultSet = preparedStatement.executeQuery();
-        if (!resultSet.next()) {
-            System.out.println("У пользователя нету открытых счетов.");
-        } else {
-            do {
-                String account = resultSet.getString(2);
-                System.out.println(account);
-            } while (resultSet.next());
-        }
-        preparedStatement.close();
+    public static void message(String string) {
+        System.out.println(string);
     }
 }

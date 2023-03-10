@@ -9,6 +9,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 public class UserDao {
     private final DataSource dataSource;
@@ -42,6 +43,24 @@ public class UserDao {
     }
 
     public UserModel insert(String email, String hash) {
-        return null;
+        try (Connection connection = dataSource.getConnection()) {
+            PreparedStatement ps = connection.prepareStatement("insert into postgres1.public.service_user(email, password) values (?, ?)", Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, email);
+            ps.setString(2, hash);
+            ps.executeUpdate();
+            ResultSet rs = ps.getGeneratedKeys();
+            if (rs.next()) {
+                UserModel userModel = new UserModel();
+                userModel.setId(rs.getLong(1));
+                userModel.setEmail(email);
+                userModel.setPassword(hash);
+
+                return userModel;
+            } else {
+                throw new CustomException("Can't generate id!");
+            }
+        } catch (SQLException e) {
+            throw new CustomException(e);
+        }
     }
 }

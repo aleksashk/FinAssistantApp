@@ -23,4 +23,13 @@ public class AuthService {
         }
         return userDtoConverter.convert(userModel);
     }
+
+    public UserDTO registration(String email, String password) {
+        String hash = digestService.hex(password);
+        UserModel userModel = userDao.insert(email, hash);
+        if (userModel == null) {
+            return null;
+        }
+        return userDtoConverter.convert(userModel);
+    }
 }

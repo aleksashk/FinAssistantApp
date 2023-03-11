@@ -1,31 +1,35 @@
 package com.aleksandrphilimonov.finAssistApp.service;
 
-import com.aleksandrphilimonov.finAssistApp.converter.AccountModelToDTOConverter;
+import com.aleksandrphilimonov.finAssistApp.converter.AccountModelToDtoConverter;
 import com.aleksandrphilimonov.finAssistApp.dao.AccountDao;
 import com.aleksandrphilimonov.finAssistApp.dao.AccountModel;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 public class AccountService {
     private final AccountDao accountDao;
-    private final AccountModelToDTOConverter accountModelToDTOConverter;
+    private final AccountModelToDtoConverter accountModelToDtoConverter;
 
-    public AccountService() {
-        this.accountDao = new AccountDao();
-        this.accountModelToDTOConverter = new AccountModelToDTOConverter();
+    public AccountService(AccountDao accountDao, AccountModelToDtoConverter accountModelToDtoConverter) {
+        this.accountDao = accountDao;
+        this.accountModelToDtoConverter = accountModelToDtoConverter;
     }
 
     public List<AccountDTO> getAllByUserId(long userId) {
-        return accountDao.findAllByUserId(userId).stream().map(accountModelToDTOConverter::convert).collect(Collectors.toList());
+        return accountDao.findAllByUserId(userId)
+                .stream()
+                .map(accountModelToDtoConverter::convert)
+                .collect(toList());
     }
 
     public AccountDTO addAccount(String title, BigDecimal balance, long userId) {
         AccountModel accountModel;
         if (accountDao.findByTitleAndUserId(title, userId) == null) {
             accountModel = accountDao.create(title, balance.doubleValue(), userId);
-            return accountModelToDTOConverter.convert(accountModel);
+            return accountModelToDtoConverter.convert(accountModel);
         }
         return null;
     }

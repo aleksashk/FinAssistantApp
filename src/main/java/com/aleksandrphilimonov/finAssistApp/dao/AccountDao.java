@@ -36,7 +36,7 @@ public class AccountDao {
                 AccountModel accountModel = new AccountModel();
                 accountModel.setId(rs.getLong("id"));
                 accountModel.setTitle(rs.getString("title"));
-                accountModel.setAmount(new BigDecimal(rs.getLong("amount")));
+                accountModel.setBalance(new BigDecimal(rs.getLong("amount")));
                 accountModel.setUserId(rs.getLong("user_id"));
 
                 accountModelList.add(accountModel);
@@ -58,7 +58,7 @@ public class AccountDao {
                 accountModel = new AccountModel();
                 accountModel.setId(rs.getLong("id"));
                 accountModel.setTitle(rs.getString("title"));
-                accountModel.setAmount(new BigDecimal(rs.getLong("amount")));
+                accountModel.setBalance(new BigDecimal(rs.getLong("amount")));
                 accountModel.setUserId(rs.getLong("user_id"));
             }
 
@@ -84,7 +84,7 @@ public class AccountDao {
                 accountModel = new AccountModel();
                 accountModel.setId(rs.getLong("id"));
                 accountModel.setTitle(rs.getString("title"));
-                accountModel.setAmount(new BigDecimal(rs.getLong("amount")));
+                accountModel.setBalance(new BigDecimal(rs.getLong("amount")));
                 accountModel.setUserId(rs.getLong("user_id"));
                 return accountModel;
             } else {

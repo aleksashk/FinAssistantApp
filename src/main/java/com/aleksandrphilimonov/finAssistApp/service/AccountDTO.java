@@ -7,7 +7,7 @@ public class AccountDTO {
 
     private String title;
 
-    private BigDecimal amount;
+    private BigDecimal balance;
 
     private long userId;
 
@@ -27,12 +27,12 @@ public class AccountDTO {
         this.title = title;
     }
 
-    public BigDecimal getAmount() {
-        return amount;
+    public BigDecimal getBalance() {
+        return balance;
     }
 
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
+    public void setBalance(BigDecimal balance) {
+        this.balance = balance;
     }
 
     public long getUserId() {
@@ -48,7 +48,7 @@ public class AccountDTO {
         return "AccountDTO{" +
                 "id=" + id +
                 ", title='" + title + '\'' +
-                ", amount=" + amount +
+                ", amount=" + balance +
                 ", userId=" + userId +
                 '}';
     }

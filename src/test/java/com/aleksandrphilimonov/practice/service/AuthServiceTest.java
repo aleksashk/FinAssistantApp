@@ -30,14 +30,6 @@ public class AuthServiceTest {
 
     @Mock UserModelToUserDtoConverter userDtoConverter;
 
-    @Before
-    public void setUp() throws Exception {
-        userDao = mock(UserDao.class);
-        digestService = mock(DigestService.class);
-        userDtoConverter = mock(UserModelToUserDtoConverter.class);
-        subj = new AuthService(userDao, digestService, userDtoConverter);
-    }
-
     @Test
     public void authUserNotFound() {
         when(digestService.hex("password")).thenReturn("hex");
